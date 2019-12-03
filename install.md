@@ -38,6 +38,7 @@ ID                  NAME                IMAGE               NODE                
 ```
 
 * `docker service logs demo` これでログを見ることができる
+* 作成したサービスを止める（消す？） `docker service rm demo`
 
 ここまでの手順を終えた段階の公式サイトの一文を引用すると……
 
