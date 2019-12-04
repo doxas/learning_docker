@@ -280,11 +280,11 @@ docker container run --mount type=bind,src=/ホストのパス,dst=/コンテナ
 上記が基本の形で、Windows の場合は Users の下の階層を当てて置くのが順当っぽい。これを実行すると Docker Desktop がアクセスを許可していいんですか的なことを言ってくるので許可する。
 
 ```
+# HOME を基点にする場合
 $ docker container run -it --rm --name mount-test --mount type=bind,src=$HOME/mount-test,dst=/root/testdir centos:latest //bin/bash
+# カレントディレクトリを基点にする場合
+$ docker container run -it --rm --name mount-test --mount type=bind,src="$(pwd)",dst=/root/testdir centos:latest //bin/bash
 ```
-
-
-
 
 
 
