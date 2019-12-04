@@ -262,6 +262,28 @@ centos:apache-systemd-httpd \
 
 ポートフォワーディングを行っていない場合、別プロセスでコンテナ内に exec してから `ip addr` 等を行って表示される inet の物理アドレスにアクセスしてもつながらなかった。（ネットワーク周りはよくわかってない）
 
+尚、一度起動したコンテナは、明示的に削除しないと重複したときに怒られてしまう。
+
+これを回避するには `--rm` オプションを付与する。これにより、コンテナが停止すると同時に自動的に削除されるようになる。
+
+
+# ホスト OS 側のディレクトリをコンテナ化して別のコンテナに提供する
+
+bind mount という機能を使って、ホスト OS のディレクトリをコンテナ化し、それを別のコンテナに対して提供している形を作ることができる。
+
+`docker container run` の引数に `--mount` を指定して行う。
+
+```
+docker container run --mount type=bind,src=/ホストのパス,dst=/コンテナ内
+```
+
+上記が基本の形で、Windows の場合は Users の下の階層を当てて置くのが順当っぽい。これを実行すると Docker Desktop がアクセスを許可していいんですか的なことを言ってくるので許可する。
+
+```
+$ docker container run -it --rm --name mount-test --mount type=bind,src=$HOME/mount-test,dst=/root/testdir centos:latest //bin/bash
+```
+
+
 
 
 
