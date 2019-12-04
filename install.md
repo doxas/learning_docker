@@ -137,6 +137,131 @@ docker container commit コンテナID タグ名
 
 `docker container rm 名前（もしくは、コンテナ ID でも可）`
 
+## コンテナのバックグラウンド起動
+
+`docker container run -itd --name 名前 イメージ //bin/bash`
+
+`-d` オプションでバックグラウンド起動。
+
+## バックグラウンド起動中のコンテナに入る
+
+`docker container attach コンテナ名`
+
+## バックグラウンド起動中のコンテナの停止
+
+`docker container stop コンテナ名`
+
+## 停止中のコンテナを起動させる
+
+`docker container start コンテナ名`
+
+run しても同じだけど、そのままバックグラウンド起動になるってことかな。
+
+## イメージのほうを削除する場合
+
+`docker image rm イメージ名`
+
+ただしこのとき、このイメージを元にしたコンテナが存在している場合は、削除することはできない。
+
+`-f` オプションの付与で強制的にイメージだけを削除することはできる。
+
+
+# Apache を使う
+
+考え方としては、まず CentOS のイメージからコンテナを起動し、そこに Apache をインストールする。
+
+```
+$ docker container run -it --name apache-test centos:latest //bin/bash
+[root@]# yum install httpd iproute
+```
+
+ウェブサーバのルートに移動して、HTML を作成しておく。
+
+```
+[root@]# cd ./var/www/html/
+[root@]# echo "Systemd in a container." > index.html
+[root@]# exit
+```
+
+これでインストールそのものは終わった状態になるので、一度ホスト OS に戻ってきて、このコンテナをイメージ化する。
+
+また、イメージ化したあとのコンテナはもう不要になるので削除しておく。
+
+```
+$ docker container commit apache-test centos:apache
+$ docker container rm apache-test
+```
+
+次に、CentOS を各種サービス有効な状態で起動する。これには `sbin/init` を使った起動を行う。（つまりコマンドラインには入れない）
+
+```
+$ docker container run \
+-it \
+--tmpfs //tmp \
+--tmpfs //run \
+-v //sys/fs/cgroup://sys/fs/cgroup:ro \
+--stop-signal SIGRTMIN+3 \
+--name apache-test \
+-h apache-test \
+centos:apache \
+//sbin/init
+```
+
+ここでもやはり、すべてのパスに対して Windows では二重のスラッシュが必要な点に注意。
+
+ここで起動がうまく行った場合でも、 `/sbin/init` で起動しているからコマンドラインが現れないので、別のプロセスからこのコンテナに対して `/bin/bash` で入り直すということを行う。
+
+別プロセスから以下のように exec を使ってシェルを起動する。
+
+```
+$ docker container exec -it apache-test //bin/bash
+```
+
+これで、起動中のコンテナに入ることができた状態（ `docker container attach` したのと同じ状態）なので、ここで apache を起動できる。
+
+起動には `systemctl` コマンドを利用する。
+
+```
+[root@]# systemctl start httpd
+[root@]# systemctl status httpd
+[root@]# ps -ef
+```
+
+コンテナが起動した際に、自動的にサービスとして httpd が起動するように設定するには以下のようにする。
+
+```
+[root@]# systemctl enable httpd
+```
+
+ここまで来たら、コンテナ内で自動的にサーバが起動する設定まで完了したことになるので、このコンテナからイメージを作成して、コンテナを削除する。
+
+```
+$ docker container commit apache-test centos:apache-systemd-httpd
+$ docker container rm -f apache-test
+```
+
+このコンテナの強制削除を行った時点で、最初に sbin/init で起動したプロセスの制御がホスト OS 側に戻ってくる。
+
+新しく作成したイメージからコンテナを起動し、httpd が自動起動しているかをチェックする。
+
+また、このときポートフォワーディングの設定も同時に行っておくことで、ホスト OS 側から、コンテナをローカルホストのように参照できる。
+
+```
+$ docker container run \
+-it \
+--tmpfs //tmp \
+--tmpfs //run \
+-v //sys/fs/cgroup://sys/fs/cgroup:ro \
+--stop-signal SIGRTMIN+3 \
+--name apache-test \
+-h apache-test \
+--publish 8080:80 \
+centos:apache-systemd-httpd \
+//sbin/init
+```
+
+ポートフォワーディングを行っていない場合、別プロセスでコンテナ内に exec してから `ip addr` 等を行って表示される inet の物理アドレスにアクセスしてもつながらなかった。（ネットワーク周りはよくわかってない）
+
 
 
 
