@@ -286,5 +286,38 @@ $ docker container run -it --rm --name mount-test --mount type=bind,src=$HOME/mo
 $ docker container run -it --rm --name mount-test --mount type=bind,src="$(pwd)",dst=/root/testdir centos:latest //bin/bash
 ```
 
+## ホスト OS 上のボリュームをマウントする
+
+Mac の場合 `/var/lib/docker/volumes/` は存在しない。これは VM 上で Docker が動いているからである。
+
+ver18.03 以降の Docker for mac では `~/Library/Containers/com.docker.docker/Data/vms/0` の場所にボリュームが存在するが、ボリュームなのでそのままではファイルは見えない。
+
+ボリュームをマウントする場合は、ボリュームに名前をつけてマウントする。 `docker volume ls` 等で一覧を見ることができる。
+
+```
+docker container run -it --rm --name volume-test --mount type=volume,src=ボリューム名,dst=/root/testdir centps:latest /bin/bash
+```
+
+恐らく、ボリュームを利用する場合と直接ホスト OS のディレクトリをマウントする方法の大きな違いは、ボリュームであればコンテナ同士でこれを参照しあえるというところだと思われるけど確証なし。
+
+
+# データ専用の用途で利用できるコンテナ busybox
+
+そもそも `-v` オプションを利用すると、ボリュームをマウントできる。
+
+その前提で次のコマンドを見ると……
+
+```
+docker container run -it -v /data0001 --name data01 busybox /bin/bash
+```
+
+busybox を利用して `/data0001` をマウントしている、という意味に読み解くことができる。
+
+この `data0001` は他のコンテナから `--volumes-from` でマウント可能。
+
+
+
+
+
 
 
