@@ -345,6 +345,65 @@ Docker ではコンテナごとに CPU やメモリ、ストレージ等を個�
 この辺は現段階では不要な知識と判断。
 
 
+# docker-compose
+
+Dockerfile によるコンテナ生成の自動化などを行っていても、複数のコンテナが連携する場合など、Dockerfile が複数必要になることがある。というかこれが増殖して管理が大変になる。
+
+そこで登場するのが docker-compose である。
+
+書籍を見た感じは追加でのインストールが必要そうであったが、最新番では Docker Desktop と同時にインストールされていた。
+
+WordPress と MariaDB を連携させる例を参考に進めていく。
+
+## yml ファイルを書く
+
+### version
+
+Docker のバージョンごとに yml ファイル自体のバージョンを指定する。
+
+[Compose file version 3 reference \| Docker Documentation](https://docs.docker.com/compose/compose-file/)
+
+### services
+
+ここに利用するイメージごとの情報を記載していく。
+
+* services.image: イメージ名
+* services.links: リンクする対象
+* services.networks: 利用するネットワーク
+* services.volumes: 利用するボリューム
+* services.depends_on: 依存関係
+* services.environment: 環境変数
+* services.env_file: 環境変数を外部ファイルに記述している場合
+
+### volumes
+
+ボリュームを生成する場合に記載する。
+
+* volumes.name
+
+注意しなければならないのは、Windows 環境では、volumes.name.driver_opt.device で相対パスが記述できなかったこと。 `$PWD` や `$(pwd)` を使ったりしてみたが駄目だった。
+
+また `./` や `~/` も同様にうまく行かず、C ドライブなどに対して `/c/Users/` のように愚直に絶対パスで記述するしか現状は方法が無いようである。終わってるな……
+
+### networks
+
+ネットワークを生成する場合に記載する。
+
+* networks.name
+
+## docker-compose の実行
+
+実行時は、対象の yml ファイルを指定する `-f` オプションを付与しつつファイルを指定。
+
+さらに `run` と同様に `-d` オプションでバックグラウンド起動を指定できる。
+
+```
+docker-compose -f ./対象ファイル.yml up -d
+```
+
+`up` がコンポーザーの実行の意味。
+
+その後の状態がどうなっているのかは、単純にコンテナの起動状態を確認できる `docker container ls` でもよいが、 `docker-compose ps` を使うことで調べることもできる。
 
 
 
