@@ -7,6 +7,8 @@ services:
             - db:mysql
         networks:
             mynet:
+        ports:
+            - "8888:80"
         volumes:
             - wp-vol:/var/www/html
         depends_on:
